@@ -30,7 +30,7 @@ bitdata KdNode {
     NodeX { 0u2, left : u15, right: u15, axis : f32 },
     NodeY { 1u2, left : u15, right: u15, axis : f32 },
     NodeZ { 2u2, left : u15, right: u15, axis : f32 },
-	Leaf  { 3u2, _ : u2, tri : [u20, ..3] }
+	Leaf  { 3u2, _ : u2, tri0 : u20, tri1 : u20, tri2 : u20 }
 }
 ```
 This defines a 64-bit value, where the first two bits indicate the type of node
@@ -38,6 +38,16 @@ This defines a 64-bit value, where the first two bits indicate the type of node
 vertex data).
 
 # Detailed design
+
+## Syntax
+
+```
+`bitdata-def` ::= `bitdata` `{` ( `bitcon` `,`? )* `}`
+```
+
+## Addition of `uN` and `sN` types
+
+`bitdata` supports 
 
 The `bitdata` type is similar to the existing `enum` type with the following
 differences: 
@@ -48,3 +58,6 @@ differences:
 # Drawbacks
 
 # Unresolved questions
+
+This RFC does not discuss endianess issues. It is assumed that the bit-fields
+are defined in target endianess.
