@@ -11,7 +11,7 @@ This RFC proposes to add support for bit-data types.
 Rust aims to be a systems level language, yet it does not support bit-level
 manipulations to a satisfactory level. We support a macro `bitflags!` for
 supporting individual bits, but there is no support for bit-ranges. Anyone
-who has had to write disassmblers for the x86 instruction set would concur
+who has had to write disassemblers for the x86 instruction set would concur
 to how error-prone it is to deal with shifts and masks.
 
 With this RFC accepted, we can describe a PCI address:
@@ -39,6 +39,23 @@ bitdata KdNode : u64 {
 This defines a 64-bit value, where the first two bits indicate the type of node
 (internal node divided in x-, y- and z-axis, or a leaf node to the triangle
 vertex data).
+
+With this in place, one could implement point lookup as such:
+```rust
+fn lookup(pt: Vec3, ns: &[KdNode]) -> Option<(uint,uint,uint)> {
+   let mut i = 0u;
+   loop {
+     let n = match ns[i] {
+       NodeX {left, right, split} => if pt.x < split { left } else { right },
+       NodeY {left, right, split} => if pt.y < split { left } else { right },
+       NodeZ {left, right, split} => if pt.z < split { left } else { right },
+       Leaf  {tri0, tri1, tri2}   => return Some(tri0, tri1, tri2)
+     };
+	 if n == 0 { return None }
+     i = n;
+   }
+}
+```
 
 # Detailed design
 
