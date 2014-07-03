@@ -27,10 +27,10 @@ a way to discriminate values:
 
 ```rust
 bitdata KdNode {
-    NodeX { 0u2, left : u15, right: u15, axis : f32 },
-    NodeY { 1u2, left : u15, right: u15, axis : f32 },
-    NodeZ { 2u2, left : u15, right: u15, axis : f32 },
-	Leaf  { 3u2, _ : u2, tri0 : u20, tri1 : u20, tri2 : u20 }
+    NodeX { axis = 0 : u2, left : u15, right: u15, axis : f32 },
+    NodeY { axis = 1 : u2, left : u15, right: u15, axis : f32 },
+    NodeZ { axis = 2 : u2, left : u15, right: u15, axis : f32 },
+	Leaf  { tag  = 3 : u2, _: u2, tri0 : u20, tri1 : u20, tri2 : u20 }
 }
 ```
 This defines a 64-bit value, where the first two bits indicate the type of node
@@ -41,13 +41,58 @@ vertex data).
 
 ## Syntax
 
-```
-`bitdata-def` ::= `bitdata` `{` ( `bitcon` `,`? )* `}`
+The syntax needs to be extended with bit-sized integer literals. These are written
+as `4u7`, or `-1i4`. In addition, bit-sized types of the form `u15` and `i9`
+needs to be added. If the compiler needs to treat them as normal values,
+zero- or sign-extension must take place.
+
+```ebnf
+bitdata-def       ::= "bitdata" "{" ( <bit-con> ("," <bit-con>)* "}" ( ":" <type> )?
+
+bit-con           ::= <con-ident> "{" ( <bit-field> ("," <bit-field>)* "}"
+
+bit-field         ::= tag-bits | labeled-bit-field 
+
+tag-bits          ::= <expr>      ;;; Sized integer literals or sized integer constants
+
+labeled-bit-field ::= <var-ident> ( "=" <expr> )? ":" <type>
 ```
 
-## Addition of `uN` and `sN` types
+## Limitations
 
-`bitdata` supports 
+* Each constructor must have the exact same bit-size. 
+
+## Bit-field access
+
+Access through the `.` operator is unchecked. In other words, this is valid
+
+```rust
+fn f(node : KdNode) -> f32 {
+   let axis = node.NodeX.axis;
+   axis
+}
+```
+
+If there is only one bit-constructor in the bit data, the constructor name may
+be elided:
+```rust
+fn bus(pci : PCI) -> u8 { pci.bus }
+```
+
+## Matching
+
+Matching is not nescessarily exhaustive, as there may be "junk" values. For
+instance, 
+```rust
+bitdata T { S { 0u5 }, N { 0b11111u5 } }
+```
+Here `T` is 5-bits, but if the value is anything else than 0 or 31, it is
+considered "junk":
+```rust
+match t { S => "Zero", N => "Non-zero", _ => "Junk" }
+```
+
+## Compared to `enum`
 
 The `bitdata` type is similar to the existing `enum` type with the following
 differences: 
