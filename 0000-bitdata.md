@@ -10,8 +10,11 @@ This RFC proposes to add support for bit-data types.
 
 Rust aims to be a systems level language, yet it does not support bit-level
 manipulations to a satisfactory level. We support a macro `bitflags!` for
-supporting individual bits, but there is no support for bit-ranges. For
-instance, with this RFC accepted we can describe a PCI address:
+supporting individual bits, but there is no support for bit-ranges. Anyone
+who has had to write disassmblers for the x86 instruction set would concur
+to how error-prone it is to deal with shifts and masks.
+
+With this RFC accepted, we can describe a PCI address:
 
 ```rust
 bitdata PCI {
@@ -26,10 +29,10 @@ Immediate values can be specified anywhere in the definition, which provides
 a way to discriminate values:
 
 ```rust
-bitdata KdNode {
-    NodeX { axis = 0 : u2, left : u15, right: u15, axis : f32 },
-    NodeY { axis = 1 : u2, left : u15, right: u15, axis : f32 },
-    NodeZ { axis = 2 : u2, left : u15, right: u15, axis : f32 },
+bitdata KdNode : u64 {
+    NodeX { axis = 0 : u2, left : u15, right: u15, split : f32 },
+    NodeY { axis = 1 : u2, left : u15, right: u15, split : f32 },
+    NodeZ { axis = 2 : u2, left : u15, right: u15, split : f32 },
 	Leaf  { tag  = 3 : u2, _: u2, tri0 : u20, tri1 : u20, tri2 : u20 }
 }
 ```
@@ -39,6 +42,9 @@ vertex data).
 
 # Detailed design
 
+All `bitdata` are calculated in units of bits instead of bytes. For this reason, 
+it is illegal to take the address of individual components. 
+
 ## Syntax
 
 The syntax needs to be extended with bit-sized integer literals. These are written
@@ -47,7 +53,7 @@ needs to be added. If the compiler needs to treat them as normal values,
 zero- or sign-extension must take place.
 
 ```ebnf
-bitdata-def       ::= "bitdata" "{" ( <bit-con> ("," <bit-con>)* "}" ( ":" <type> )?
+bitdata-def       ::= "bitdata" <ident> "{" ( <bit-con> ("," <bit-con>)* "}" ( ":" <type> )?
 
 bit-con           ::= <con-ident> "{" ( <bit-field> ("," <bit-field>)* "}"
 
@@ -55,22 +61,34 @@ bit-field         ::= tag-bits | labeled-bit-field
 
 tag-bits          ::= <expr>      ;;; Sized integer literals or sized integer constants
 
-labeled-bit-field ::= <var-ident> ( "=" <expr> )? ":" <type>
+labeled-bit-field ::= <var-ident> ( "=" <expr> )? ":" <bitdata-type>
+
+bitdata-type      ::= ("u" | "i") ['0'..'9']+ | "f32" | "f64" | <bitdata-def-ident>
 ```
 
 ## Limitations
 
 * Each constructor must have the exact same bit-size. 
+* If the `bitdata` definition has a type specifier, all constructor bit-sizes must match this.
+* Tag-bits and labeled bit-fields with initializers act as discriminators, but they need
+not be exhaustive.
+
+## Construction
+
+```rust
+  let addr = PCI { bus : 0, dev : 2, fun : 3 };
+  let tree = vec![ NodeX { left: 1, right: 2, split: 10.0 }, // 0
+                   NodeY { left: 3, right: 0, split: 0.5 },  // 1
+				   Leaf { tri0: 0, tri1: 1, tri2: 2 },       // 2
+				   Leaf { tri0: 3, tri1: 4, tri2: 5 } ]      // 3
+```
 
 ## Bit-field access
 
 Access through the `.` operator is unchecked. In other words, this is valid
 
 ```rust
-fn f(node : KdNode) -> f32 {
-   let axis = node.NodeX.axis;
-   axis
-}
+fn f(node : KdNode) -> f32 { node.NodeX.axis }
 ```
 
 If there is only one bit-constructor in the bit data, the constructor name may
@@ -100,9 +118,29 @@ differences:
 * The discriminator is not added automatically. 
 * All bit-data constructors must have the exact same bit-size.
 
+## Alternatives
+
+It has been suggested to implement this a syntax extension. This will not 
+work, because
+
+* We need significant error-checking, including bit-size calulations
+and overlapping tag checks
+* `bitdata` definitions may make use of other `bitdata` definitions
+* Syntactic overhead would be large
+* It is unclear how cross-module usage and type-checking would occur
+
 # Drawbacks
 
 # Unresolved questions
 
 This RFC does not discuss endianess issues. It is assumed that the bit-fields
 are defined in target endianess.
+
+Also, we could support inline-arrays of bit fields, but that could be saved 
+for a future implementation. For instance:
+```rust
+bitdata KdTree {
+   // ...
+   Leaf  { tag = 3 : u2, _: u2, tri : [u20,..3] }
+}
+```
