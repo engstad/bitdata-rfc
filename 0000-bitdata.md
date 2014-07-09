@@ -70,17 +70,36 @@ needs to be added. If the compiler needs to treat them as normal values,
 zero- or sign-extension must take place.
 
 ```ebnf
-bitdata-def       ::= "bitdata" <ident> "{" ( <bit-con> ("," <bit-con>)* "}" ( ":" <type> )?
+BITDATA_DEFN      ::= "bitdata" IDENT (":" TYPE)? "{" BITDATA_CONS_LIST* "}"
+```
 
-bit-con           ::= <con-ident> "{" ( <bit-field> ("," <bit-field>)* "}"
+This introduces the `bitdata` type with a name (the identifier), an optional
+carrier type, followed by a block of bitdata constructors. The carrier type
+is used as a substitution when regular data-types are needed. 
 
-bit-field         ::= tag-bits | labeled-bit-field 
+```ebnf
+BITDATA_CONS_LIST ::= BITDATA_CONS ("," BITDATA_CONS)*
+BITDATA_CONS      ::= IDENT "{" BITFIELD_LIST "}"
+```
 
-tag-bits          ::= <expr>      ;;; Sized integer literals or sized integer constants
+The bitdata constructors are all named constructors, each with bit-fields. A 
+bit-field is either tag-bits or a labeled bit-field. Tag-bits are constant 
+expressions (used for bit-field `match`), and labeled bit-fields are named
+bit-ranges.
 
-labeled-bit-field ::= <var-ident> ( "=" <expr> )? ":" <bitdata-type>
+```ebnf
+BITFIELD_LIST     ::= BITFIELD ("," BITFIELD)*
+BITFIELD          ::= TAG_BITS | LABELED_BIT_FIELD
+TAG_BITS          ::= BIT_LITERAL
+LABELED_BIT_FIELD ::= IDENT ( "=" CONST_EXPR )? ":" BITDATA_TYPE
+```
 
-bitdata-type      ::= ("u" | "i") ['0'..'9']+ | "f32" | "f64" | <bitdata-def-ident>
+The valid bitdata-types are only other bitdata-types (by name) or else unsigned
+and signed bit-types like e.g. `u12`, and also floating-point value types.
+
+```ebnf
+BITDATA_TYPE      ::= ("u" | "i") ['0'..'9']+ | "f32" | "f64" | IDENT
+BIT_LITERAL       ::= INT_LITERAL ("u" | "i") ['0'..'9']+
 ```
 
 ## Limitations
