@@ -154,7 +154,24 @@ differences:
 * The discriminator is not added automatically. 
 * All bit-data constructors must have the exact same bit-size.
 
-## Alternatives
+## Notes
+
+`bitdata` may help reduce some unsafe operations such as transmute. For instance,
+we can analyse a IEEE-754 value:
+
+```rust
+bitdata IEEE754 {
+   F { value : f32 },
+   I { sign : u1, exp: u8, mant: u23 }
+}
+
+fn float_rep(f : f32) {
+  let x = F { value : f };
+  println!("s:{}, e:{}, m:{}", x.I.sign, x.I.exp, x.I.mant)
+}
+```
+
+# Alternatives
 
 It has been suggested to implement this a syntax extension. This will not 
 work, because
