@@ -70,7 +70,7 @@ needs to be added. If the compiler needs to treat them as normal values,
 zero- or sign-extension must take place.
 
 ```ebnf
-BITDATA_DEFN      ::= "bitdata" IDENT (":" TYPE)? "{" BITDATA_CONS_LIST* "}"
+BITDATA-DEFN      ::= "bitdata" IDENT (":" TYPE)? "{" BITDATA-CONS-LIST* "}"
 ```
 
 This introduces the `bitdata` type with a name (the identifier), an optional
@@ -78,8 +78,8 @@ carrier type, followed by a block of bitdata constructors. The carrier type
 is used as a substitution when regular data-types are needed. 
 
 ```ebnf
-BITDATA_CONS_LIST ::= BITDATA_CONS ("," BITDATA_CONS)*
-BITDATA_CONS      ::= IDENT "{" BITFIELD_LIST "}"
+BITDATA-CONS-LIST ::= BITDATA-CONS ("," BITDATA-CONS)*
+BITDATA-CONS      ::= IDENT "{" BITFIELD-LIST "}"
 ```
 
 The bitdata constructors are all named constructors, each with bit-fields. A 
@@ -88,18 +88,18 @@ expressions (used for bit-field `match`), and labeled bit-fields are named
 bit-ranges.
 
 ```ebnf
-BITFIELD_LIST     ::= BITFIELD ("," BITFIELD)*
-BITFIELD          ::= TAG_BITS | LABELED_BIT_FIELD
-TAG_BITS          ::= BIT_LITERAL
-LABELED_BIT_FIELD ::= IDENT ( "=" CONST_EXPR )? ":" BITDATA_TYPE
+BITFIELD-LIST     ::= BITFIELD ("," BITFIELD)*
+BITFIELD          ::= TAG-BITS | LABELED-BIT-FIELD
+TAG-BITS          ::= BIT-LITERAL
+LABELED-BIT-FIELD ::= IDENT ( "=" CONST-EXPR )? ":" BITDATA-TYPE
 ```
 
 The valid bitdata-types are only other bitdata-types (by name) or else unsigned
 and signed bit-types like e.g. `u12`, and also floating-point value types.
 
 ```ebnf
-BITDATA_TYPE      ::= ("u" | "i") ['0'..'9']+ | "f32" | "f64" | IDENT
-BIT_LITERAL       ::= INT_LITERAL ("u" | "i") ['0'..'9']+
+BITDATA-TYPE      ::= ("u" | "i") ('0'-'9')+ | "f32" | "f64" | IDENT
+BIT-LITERAL       ::= INT-LITERAL ("u" | "i") ('0'..'9')+
 ```
 
 ## Limitations
