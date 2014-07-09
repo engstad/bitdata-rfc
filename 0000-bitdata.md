@@ -36,9 +36,9 @@ bitdata KdNode : u64 {
 	Leaf  { tag  = 3 : u2, _: u2, tri0 : u20, tri1 : u20, tri2 : u20 }
 }
 ```
-This defines a 64-bit value, where the first two bits indicate the type of node
-(internal node divided in x-, y- and z-axis, or a leaf node to the triangle
-vertex data).
+This defines a 64-bit value, where the two most significant bits indicate 
+the type of node (internal node divided in x-, y- and z-axis, or a leaf 
+node to the triangle vertex data).
 
 With this in place, one could implement point lookup as such:
 ```rust
